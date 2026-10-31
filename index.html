@@ -256,12 +256,13 @@
 
     <!-- Application Script -->
     <script>
-        // Updated Default Player Names List (16 Players)
+        // Updated Default Player Names List (17 Players)
         const DEFAULT_PLAYERS = [
             "Kabash", "Yahshiyah", "Yashamar", "Yaahyar", 
             "Yawaahla", "Chaanan", "Shamar", "Zak", 
             "Imad", "Shami", "Nahal", "Yaramyah", 
-            "Marshy", "RJay", "Super", "Tyrique"
+            "Marshy", "RJay", "Super", "Tyrique",
+            "Arak"
         ];
 
         // Theme Naming Schemes
@@ -463,7 +464,7 @@
                     active: true
                 }));
                 renderPlayerList();
-                showToast("Reset squad to default 16 players!");
+                showToast(`Reset squad to default ${DEFAULT_PLAYERS.length} players!`);
             });
 
             // Clear All Players
