@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sunday Football - Team Generator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        pitch: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                            950: '#052e16',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0b130e;
+            color: #f1f5f9;
+        }
+        /* Custom subtle scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #14532d20;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #16a34a80;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #22c55e;
+        }
+        .shuffle-animation {
+            animation: pulse-glow 0.4s ease-in-out infinite alternate;
+        }
+        @keyframes pulse-glow {
+            from { opacity: 0.6; transform: scale(0.99); }
+            to { opacity: 1; transform: scale(1.01); }
+        }
+    </style>
+</head>
+<body class="min-h-screen font-sans flex flex-col justify-between selection:bg-pitch-500 selection:text-black">
+
+    <!-- Header / Navbar -->
+    <header class="border-b border-pitch-900 bg-pitch-950/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-pitch-500 text-pitch-950 flex items-center justify-center font-black text-xl shadow-lg shadow-pitch-500/20">
+                    <i class="fa-solid font-black fa-futbol"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xl tracking-tight text-white flex items-center gap-2">
+                        Sunday Squads
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-pitch-500/20 text-pitch-500 border border-pitch-500/30">Matchday Ready</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Quick & Fair Team Generator</p>
+                </div>
+            </div>
+            
+            <div id="quickStats" class="text-right">
+                <span class="text-xs text-slate-400 uppercase font-semibold tracking-wider block">Match Roster</span>
+                <span id="headerPlayerCount" class="text-sm font-bold text-pitch-500">12 Active Players</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-5xl mx-auto px-4 py-6 w-full flex-grow grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Column: Player Management (5 cols) -->
+        <section class="lg:col-span-5 flex flex-col gap-4">
+            
+            <!-- Player Input & Controls Card -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                <h2 class="text-lg font-bold text-white mb-3 flex items-center justify-between">
+                    <span><i class="fa-solid fa-users text-pitch-500 mr-2"></i> Player List</span>
+                    <span id="playerBadgeCount" class="text-xs bg-slate-800 text-pitch-500 font-semibold px-2.5 py-1 rounded-full border border-slate-700">12 / 12</span>
+                </h2>
+
+                <!-- Add Player Form -->
+                <form id="addPlayerForm" class="flex gap-2 mb-4">
+                    <input 
+                        type="text" 
+                        id="newPlayerName" 
+                        placeholder="Enter player name..." 
+                        maxlength="25"
+                        class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-pitch-500 focus:ring-1 focus:ring-pitch-500 transition-all"
+                        required
+                    />
+                    <button 
+                        type="submit" 
+                        class="bg-pitch-600 hover:bg-pitch-500 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center gap-1.5 shrink-0 shadow-md shadow-pitch-600/20 active:scale-95"
+                    >
+                        <i class="fa-solid fa-plus text-xs"></i>
+                        <span>Add</span>
+                    </button>
+                </form>
+
+                <!-- Select All / Deselect Toggle -->
+                <div class="flex items-center justify-between bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 mb-3 text-xs">
+                    <span class="text-slate-300 font-medium">Select All Squad Members</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="selectAllToggle" checked class="sr-only peer">
+                        <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-pitch-600"></div>
+                    </label>
+                </div>
+
+                <!-- Player Roster Scrollable List -->
+                <div id="playerList" class="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+                    <!-- Dynamic Player Items inserted here -->
+                </div>
+
+                <!-- Reset Defaults Button -->
+                <div class="mt-4 pt-3 border-t border-slate-800/80 flex justify-between items-center text-xs">
+                    <button id="resetDefaultsBtn" type="button" class="text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-left"></i> Reset Sample Roster
+                    </button>
+                    <button id="clearAllBtn" type="button" class="text-red-400 hover:text-red-300 transition-colors flex items-center gap-1">
+                        <i class="fa-solid fa-trash-can"></i> Clear All
+                    </button>
+                </div>
+            </div>
+
+            <!-- Team Split Configuration Card -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+                <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-pitch-500"></i> Generator Settings
+                </h3>
+
+                <!-- Number of Teams Selector -->
+                <div>
+                    <label class="text-xs text-slate-400 font-semibold mb-1.5 block">Number of Teams</label>
+                    <div class="grid grid-cols-3 gap-2" id="teamCountGroup">
+                        <button type="button" data-teams="2" class="team-count-btn bg-pitch-600 text-white font-bold py-2 rounded-xl text-sm border border-pitch-500 transition-all">2 Teams</button>
+                        <button type="button" data-teams="3" class="team-count-btn bg-slate-950 text-slate-400 hover:text-slate-200 font-bold py-2 rounded-xl text-sm border border-slate-800 transition-all">3 Teams</button>
+                        <button type="button" data-teams="4" class="team-count-btn bg-slate-950 text-slate-400 hover:text-slate-200 font-bold py-2 rounded-xl text-sm border border-slate-800 transition-all">4 Teams</button>
+                    </div>
+                </div>
+
+                <!-- Team Naming Scheme Dropdown -->
+                <div>
+                    <label for="namingScheme" class="text-xs text-slate-400 font-semibold mb-1.5 block">Team Theme Naming</label>
+                    <select id="namingScheme" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-pitch-500">
+                        <option value="bibs">Match Bibs (Orange vs Green vs Blue vs Yellow)</option>
+                        <option value="classic">Classic (Team 1, Team 2, Team 3...)</option>
+                        <option value="pro">Pro Clubs (FC Red Star, Real Green, Blue City...)</option>
+                        <option value="shirts">Shirts vs Shirts Off (2 Teams only)</option>
+                    </select>
+                </div>
+
+                <!-- Big Shuffle Action Button -->
+                <button 
+                    id="generateTeamsBtn" 
+                    type="button" 
+                    class="w-full bg-pitch-500 hover:bg-pitch-400 active:scale-[0.98] text-pitch-950 font-extrabold py-3.5 px-4 rounded-xl text-base shadow-lg shadow-pitch-500/25 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer mt-2"
+                >
+                    <i class="fa-solid fa-dice text-lg"></i>
+                    <span>SHUFFLE & CREATE TEAMS</span>
+                </button>
+            </div>
+
+        </section>
+
+        <!-- Right Column: Resulting Teams Display (7 cols) -->
+        <section class="lg:col-span-7 flex flex-col gap-4">
+            
+            <!-- Results Header / Toolbar -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex-grow flex flex-col">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-4 border-b border-slate-800">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-trophy text-amber-400"></i> Matchday Lineup
+                        </h2>
+                        <p id="matchSummaryText" class="text-xs text-slate-400">Selected players ready to play</p>
+                    </div>
+
+                    <!-- Quick Action Buttons for Results -->
+                    <div class="flex items-center gap-2">
+                        <button 
+                            id="reshuffleBtn" 
+                            type="button" 
+                            class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl text-xs font-semibold border border-slate-700 transition-all flex items-center gap-1.5"
+                            title="Reshuffle current selection"
+                        >
+                            <i class="fa-solid fa-arrows-rotate text-pitch-500"></i>
+                            <span>Reshuffle</span>
+                        </button>
+
+                        <button 
+                            id="copyWhatsAppBtn" 
+                            type="button" 
+                            class="bg-pitch-600 hover:bg-pitch-500 text-white px-3.5 py-2 rounded-xl text-xs font-semibold shadow-md transition-all flex items-center gap-1.5"
+                        >
+                            <i class="fa-brands fa-whatsapp text-sm"></i>
+                            <span>Copy for Chat</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dynamic Team Cards Container -->
+                <div id="teamsDisplayGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow">
+                    <!-- Teams generated here -->
+                </div>
+
+                <!-- Empty State Prompt -->
+                <div id="emptyState" class="hidden my-auto py-12 flex-col items-center justify-center text-center">
+                    <div class="w-16 h-16 rounded-full bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-500 text-2xl mb-3">
+                        <i class="fa-solid fa-shirt"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-300 mb-1">No Teams Generated Yet</h3>
+                    <p class="text-xs text-slate-500 max-w-xs">Select at least 2 players from the left panel and hit "Shuffle & Create Teams".</p>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Notification Toast for Copy to Clipboard -->
+    <div id="toast" class="fixed bottom-5 right-5 translate-y-20 opacity-0 bg-pitch-500 text-pitch-950 font-bold px-4 py-3 rounded-xl shadow-2xl transition-all duration-300 flex items-center gap-2.5 z-50 border border-pitch-400">
+        <i class="fa-solid fa-circle-check text-lg"></i>
+        <span id="toastMsg">Teams copied to clipboard!</span>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        // Updated Default Player Names List (16 Players)
+        const DEFAULT_PLAYERS = [
+            "Kabash", "Yahshiyah", "Yashamar", "Yaahyar", 
+            "Yawaahla", "Chaanan", "Shamar", "Zak", 
+            "Imad", "Shami", "Nahal", "Yaramyah", 
+            "Marshy", "RJay", "Super", "Tyrique"
+        ];
+
+        // Theme Naming Schemes
+        const NAMING_PRESETS = {
+            bibs: [
+                { name: "Orange Bibs", color: "from-amber-500/20 to-amber-600/10", border: "border-amber-500/40", text: "text-amber-400", badge: "bg-amber-500/20 text-amber-300", icon: "🟢" },
+                { name: "Green Bibs", color: "from-emerald-500/20 to-emerald-600/10", border: "border-emerald-500/40", text: "text-emerald-400", badge: "bg-emerald-500/20 text-emerald-300", icon: "🟠" },
+                { name: "Blue Bibs", color: "from-sky-500/20 to-sky-600/10", border: "border-sky-500/40", text: "text-sky-400", badge: "bg-sky-500/20 text-sky-300", icon: "🔵" },
+                { name: "Yellow Bibs", color: "from-yellow-500/20 to-yellow-600/10", border: "border-yellow-500/40", text: "text-yellow-400", badge: "bg-yellow-500/20 text-yellow-300", icon: "🟡" }
+            ],
+            classic: [
+                { name: "Team 1", color: "from-pitch-500/20 to-pitch-600/10", border: "border-pitch-500/40", text: "text-pitch-400", badge: "bg-pitch-500/20 text-pitch-300", icon: "1️⃣" },
+                { name: "Team 2", color: "from-blue-500/20 to-blue-600/10", border: "border-blue-500/40", text: "text-blue-400", badge: "bg-blue-500/20 text-blue-300", icon: "2️⃣" },
+                { name: "Team 3", color: "from-purple-500/20 to-purple-600/10", border: "border-purple-500/40", text: "text-purple-400", badge: "bg-purple-500/20 text-purple-300", icon: "3️⃣" },
+                { name: "Team 4", color: "from-rose-500/20 to-rose-600/10", border: "border-rose-500/40", text: "text-rose-400", badge: "bg-rose-500/20 text-rose-300", icon: "4️⃣" }
+            ],
+            pro: [
+                { name: "FC Red Star", color: "from-red-500/20 to-red-600/10", border: "border-red-500/40", text: "text-red-400", badge: "bg-red-500/20 text-red-300", icon: "🔴" },
+                { name: "Real Green", color: "from-emerald-500/20 to-emerald-600/10", border: "border-emerald-500/40", text: "text-emerald-400", badge: "bg-emerald-500/20 text-emerald-300", icon: "🟢" },
+                { name: "Blue City", color: "from-cyan-500/20 to-cyan-600/10", border: "border-cyan-500/40", text: "text-cyan-400", badge: "bg-cyan-500/20 text-cyan-300", icon: "🔵" },
+                { name: "Golden Royals", color: "from-amber-500/20 to-amber-600/10", border: "border-amber-500/40", text: "text-amber-400", badge: "bg-amber-500/20 text-amber-300", icon: "🟡" }
+            ],
+            shirts: [
+                { name: "Shirts", color: "from-indigo-500/20 to-indigo-600/10", border: "border-indigo-500/40", text: "text-indigo-400", badge: "bg-indigo-500/20 text-indigo-300", icon: "👕" },
+                { name: "Skins (No Shirts)", color: "from-orange-500/20 to-orange-600/10", border: "border-orange-500/40", text: "text-orange-400", badge: "bg-orange-500/20 text-orange-300", icon: "🎽" }
+            ]
+        };
+
+        // Application State
+        let players = [];
+        let selectedTeamCount = 2;
+        let generatedTeams = [];
+
+        // DOM Elements
+        const playerListEl = document.getElementById('playerList');
+        const addPlayerForm = document.getElementById('addPlayerForm');
+        const newPlayerNameInput = document.getElementById('newPlayerName');
+        const selectAllToggle = document.getElementById('selectAllToggle');
+        const playerBadgeCount = document.getElementById('playerBadgeCount');
+        const headerPlayerCount = document.getElementById('headerPlayerCount');
+        const resetDefaultsBtn = document.getElementById('resetDefaultsBtn');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        const teamCountBtns = document.querySelectorAll('.team-count-btn');
+        const namingSchemeSelect = document.getElementById('namingScheme');
+        const generateTeamsBtn = document.getElementById('generateTeamsBtn');
+        const reshuffleBtn = document.getElementById('reshuffleBtn');
+        const copyWhatsAppBtn = document.getElementById('copyWhatsAppBtn');
+        const teamsDisplayGrid = document.getElementById('teamsDisplayGrid');
+        const emptyState = document.getElementById('emptyState');
+        const matchSummaryText = document.getElementById('matchSummaryText');
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toastMsg');
+
+        // Load saved players or fallback to defaults
+        function loadSavedPlayers() {
+            try {
+                const saved = localStorage.getItem('sunday_football_squad');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        return parsed;
+                    }
+                }
+            } catch (e) {
+                console.warn('LocalStorage error:', e);
+            }
+            return DEFAULT_PLAYERS.map((name, index) => ({
+                id: Date.now() + index,
+                name: name,
+                active: true
+            }));
+        }
+
+        // Save current roster state to local storage
+        function savePlayersToStorage() {
+            try {
+                localStorage.setItem('sunday_football_squad', JSON.stringify(players));
+            } catch (e) {
+                console.warn('LocalStorage save error:', e);
+            }
+        }
+
+        // Initialize App
+        function initApp() {
+            players = loadSavedPlayers();
+            renderPlayerList();
+            setupEventListeners();
+            generateTeams(); // Initial split on app load
+        }
+
+        // Render Player List in UI
+        function renderPlayerList() {
+            savePlayersToStorage();
+            playerListEl.innerHTML = '';
+
+            if (players.length === 0) {
+                playerListEl.innerHTML = `
+                    <div class="text-center py-6 text-slate-500 text-xs italic">
+                        No players added. Type a name above to add!
+                    </div>
+                `;
+            } else {
+                players.forEach(player => {
+                    const item = document.createElement('div');
+                    item.className = `flex items-center justify-between p-2.5 rounded-xl border transition-all ${
+                        player.active 
+                            ? 'bg-slate-950/80 border-slate-800 text-slate-200' 
+                            : 'bg-slate-950/30 border-slate-900 text-slate-500 line-through'
+                    }`;
+
+                    item.innerHTML = `
+                        <label class="flex items-center gap-3 cursor-pointer select-none flex-grow">
+                            <input 
+                                type="checkbox" 
+                                ${player.active ? 'checked' : ''} 
+                                onchange="togglePlayerActive(${player.id})"
+                                class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-pitch-600 focus:ring-pitch-500 focus:ring-offset-slate-950 accent-pitch-500 cursor-pointer"
+                            />
+                            <span class="font-medium text-sm">${escapeHtml(player.name)}</span>
+                        </label>
+                        <button 
+                            type="button" 
+                            onclick="removePlayer(${player.id})" 
+                            class="text-slate-500 hover:text-red-400 p-1 rounded-lg transition-colors text-xs"
+                            title="Remove player"
+                        >
+                            <i class="fa-solid fa-xmark text-sm"></i>
+                        </button>
+                    `;
+                    playerListEl.appendChild(item);
+                });
+            }
+
+            updateCounts();
+        }
+
+        // Update Counter Labels
+        function updateCounts() {
+            const activeCount = players.filter(p => p.active).length;
+            const totalCount = players.length;
+
+            playerBadgeCount.innerText = `${activeCount} / ${totalCount}`;
+            headerPlayerCount.innerText = `${activeCount} Active Players`;
+
+            // Update Master Select All checkbox state
+            if (totalCount > 0 && activeCount === totalCount) {
+                selectAllToggle.checked = true;
+                selectAllToggle.indeterminate = false;
+            } else if (activeCount === 0) {
+                selectAllToggle.checked = false;
+                selectAllToggle.indeterminate = false;
+            } else {
+                selectAllToggle.checked = false;
+                selectAllToggle.indeterminate = true;
+            }
+        }
+
+        // Toggle Player Active
+        window.togglePlayerActive = function(id) {
+            players = players.map(p => p.id === id ? { ...p, active: !p.active } : p);
+            renderPlayerList();
+        };
+
+        // Remove Single Player
+        window.removePlayer = function(id) {
+            players = players.filter(p => p.id !== id);
+            renderPlayerList();
+        };
+
+        // Event Listeners Setup
+        function setupEventListeners() {
+            // Add Player Form Submit
+            addPlayerForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = newPlayerNameInput.value.trim();
+                if (name) {
+                    players.push({
+                        id: Date.now(),
+                        name: name,
+                        active: true
+                    });
+                    newPlayerNameInput.value = '';
+                    renderPlayerList();
+                }
+            });
+
+            // Master Select All / Deselect All Toggle
+            selectAllToggle.addEventListener('change', (e) => {
+                const shouldCheck = e.target.checked;
+                players = players.map(p => ({ ...p, active: shouldCheck }));
+                renderPlayerList();
+            });
+
+            // Reset to Default Names
+            resetDefaultsBtn.addEventListener('click', () => {
+                players = DEFAULT_PLAYERS.map((name, index) => ({
+                    id: Date.now() + index,
+                    name: name,
+                    active: true
+                }));
+                renderPlayerList();
+                showToast("Reset squad to default 16 players!");
+            });
+
+            // Clear All Players
+            clearAllBtn.addEventListener('click', () => {
+                players = [];
+                renderPlayerList();
+            });
+
+            // Team Count Button Selection
+            teamCountBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    teamCountBtns.forEach(b => {
+                        b.className = "team-count-btn bg-slate-950 text-slate-400 hover:text-slate-200 font-bold py-2 rounded-xl text-sm border border-slate-800 transition-all";
+                    });
+                    btn.className = "team-count-btn bg-pitch-600 text-white font-bold py-2 rounded-xl text-sm border border-pitch-500 transition-all";
+                    selectedTeamCount = parseInt(btn.dataset.teams);
+                });
+            });
+
+            // Generate / Shuffle Button Click
+            generateTeamsBtn.addEventListener('click', () => {
+                animateAndGenerate();
+            });
+
+            // Reshuffle Button
+            reshuffleBtn.addEventListener('click', () => {
+                animateAndGenerate();
+            });
+
+            // Copy Teams to Clipboard
+            copyWhatsAppBtn.addEventListener('click', copyTeamsToClipboard);
+        }
+
+        // Fisher-Yates Pure Random Shuffle Algorithm
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        // Animated Shuffle Effect before displaying teams
+        function animateAndGenerate() {
+            const activePlayers = players.filter(p => p.active);
+            if (activePlayers.length < selectedTeamCount) {
+                showToast(`Select at least ${selectedTeamCount} players to split!`);
+                return;
+            }
+
+            teamsDisplayGrid.classList.add('shuffle-animation');
+            generateTeamsBtn.disabled = true;
+            generateTeamsBtn.classList.add('opacity-75');
+
+            setTimeout(() => {
+                generateTeams();
+                teamsDisplayGrid.classList.remove('shuffle-animation');
+                generateTeamsBtn.disabled = false;
+                generateTeamsBtn.classList.remove('opacity-75');
+            }, 300);
+        }
+
+        // Core Team Generator Logic
+        function generateTeams() {
+            const activePlayers = players.filter(p => p.active);
+
+            if (activePlayers.length < selectedTeamCount) {
+                teamsDisplayGrid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                matchSummaryText.innerText = "Not enough active players selected";
+                generatedTeams = [];
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            emptyState.classList.remove('flex');
+
+            // 1. Shuffle players
+            const shuffled = shuffleArray(activePlayers.map(p => p.name));
+
+            // 2. Distribute evenly into N teams
+            const numTeams = selectedTeamCount;
+            const teams = Array.from({ length: numTeams }, () => []);
+
+            shuffled.forEach((playerName, index) => {
+                const teamIndex = index % numTeams;
+                teams[teamIndex].push(playerName);
+            });
+
+            // 3. Resolve Theme / Naming Preset
+            const schemeKey = namingSchemeSelect.value;
+            let schemeConfig = NAMING_PRESETS[schemeKey] || NAMING_PRESETS.classic;
+
+            // Handle fallback if scheme has fewer items than selected teams
+            if (schemeConfig.length < numTeams) {
+                schemeConfig = NAMING_PRESETS.classic;
+            }
+
+            generatedTeams = teams.map((playerList, idx) => ({
+                config: schemeConfig[idx] || {
+                    name: `Team ${idx + 1}`,
+                    color: "from-slate-700/20 to-slate-800/10",
+                    border: "border-slate-700",
+                    text: "text-slate-300",
+                    badge: "bg-slate-800 text-slate-300",
+                    icon: "⚽"
+                },
+                players: playerList
+            }));
+
+            // 4. Update Summary Text
+            const perTeam = Math.floor(activePlayers.length / numTeams);
+            const remainder = activePlayers.length % numTeams;
+            matchSummaryText.innerText = `${activePlayers.length} Players split into ${numTeams} teams (${perTeam}${remainder > 0 ? '+' : ''} players/team)`;
+
+            // 5. Render Teams Cards
+            renderTeamsGrid();
+        }
+
+        // Render Generated Team Cards
+        function renderTeamsGrid() {
+            teamsDisplayGrid.innerHTML = '';
+
+            generatedTeams.forEach((team) => {
+                const card = document.createElement('div');
+                card.className = `bg-gradient-to-br ${team.config.color} border ${team.config.border} rounded-2xl p-4 flex flex-col justify-between shadow-lg relative overflow-hidden transition-all duration-300 hover:scale-[1.01]`;
+
+                const playerListHTML = team.players.map((p, i) => `
+                    <li class="flex items-center justify-between text-sm py-1.5 px-2.5 rounded-lg bg-slate-950/40 border border-slate-800/50">
+                        <span class="font-medium text-slate-200">${escapeHtml(p)}</span>
+                        <span class="text-xs text-slate-500 font-mono">#${i + 1}</span>
+                    </li>
+                `).join('');
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800/60">
+                            <h3 class="font-bold text-base ${team.config.text} flex items-center gap-2">
+                                <span>${team.config.icon}</span>
+                                <span>${team.config.name}</span>
+                            </h3>
+                            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full ${team.config.badge}">
+                                ${team.players.length} Players
+                            </span>
+                        </div>
+                        <ul class="space-y-1.5">
+                            ${playerListHTML}
+                        </ul>
+                    </div>
+                `;
+
+                teamsDisplayGrid.appendChild(card);
+            });
+        }
+
+        // Copy Formatted Teams Text to Clipboard (WhatsApp style)
+        function copyTeamsToClipboard() {
+            if (generatedTeams.length === 0) {
+                showToast("Generate teams first before copying!");
+                return;
+            }
+
+            const activeCount = players.filter(p => p.active).length;
+            let text = `⚽ *SUNDAY FOOTBALL TEAMS* ⚽\n`;
+            text += `👥 Total Players: ${activeCount}\n\n`;
+
+            generatedTeams.forEach((team) => {
+                text += `${team.config.icon} *${team.config.name.toUpperCase()}* (${team.players.length})\n`;
+                team.players.forEach(p => {
+                    text += `• ${p}\n`;
+                });
+                text += `\n`;
+            });
+
+            text += `🔥 See you on the pitch!`;
+
+            // Execute copy action using execCommand fallback
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                document.execCommand('copy');
+                showToast("Copied! Ready to paste into WhatsApp 📲");
+            } catch (err) {
+                showToast("Failed to copy. Try manual selection.");
+            } finally {
+                document.body.removeChild(textarea);
+            }
+        }
+
+        // Helper: Show Toast Notification
+        function showToast(message) {
+            toastMsg.innerText = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Helper: Sanitize Strings
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;")
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;")
+                      .replace(/"/g, "&quot;")
+                      .replace(/'/g, "&#039;");
+        }
+
+        // Run application on load
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
